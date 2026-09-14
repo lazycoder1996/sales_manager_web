@@ -341,7 +341,7 @@ async function handlePaymentSubmit(event) {
           </div>
         </div>
 
-        <div className="seller-detail-actions">
+        <div className="page-heading-actions">
         {seller.is_active &&
             Number(seller.outstanding || 0) > 0 && (
             <button
@@ -358,7 +358,7 @@ async function handlePaymentSubmit(event) {
             )}
 
         <button
-            className="secondary-button"
+            className="secondary-button "
             onClick={openEditForm}
         >
             <Pencil

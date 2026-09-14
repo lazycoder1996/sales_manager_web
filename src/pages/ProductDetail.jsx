@@ -401,7 +401,7 @@ function ProductDetail() {
           </div>
         </div>
 
-        <div className="product-detail-actions">
+        <div className="page-heading-actions">
           <button
             className="secondary-button"
             onClick={openEditForm}

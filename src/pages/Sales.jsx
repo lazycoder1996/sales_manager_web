@@ -1,6 +1,7 @@
 import {
   useEffect,
   useState,
+  useRef,
 } from "react"
 import {
   useNavigate,
@@ -19,23 +20,44 @@ import {
 
 function Sales() {
   const navigate = useNavigate()
+  const searchTimeoutRef = useRef(null)
+
   const [sales, setSales] = useState([])
+  const [pageInfo, setPageInfo] = useState(null)
+
   const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] =
+    useState(false)
+
   const [error, setError] = useState("")
 
-  useEffect(() => {
+    useEffect(() => {
     loadSales()
-  }, [])
+
+    return () => {
+        if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current)
+        }
+    }
+    }, [])
 
   async function loadSales() {
     try {
       setLoading(true)
       setError("")
 
-      const data = await getSales()
+      const data = await getSales({
+        first: 50,
+      })
 
-      setSales(data)
+      setSales(
+        data.edges.map(
+          (edge) => edge.node
+        )
+      )
+
+      setPageInfo(data.page_info)
     } catch (error) {
       setError(error.message)
     } finally {
@@ -43,34 +65,80 @@ function Sales() {
     }
   }
 
-  async function handleSearch(event) {
-    const value = event.target.value
-
-    setSearchTerm(value)
-
-    if (!value.trim()) {
-      loadSales()
+  async function loadMore() {
+    if (
+      loadingMore ||
+      !pageInfo?.has_next_page ||
+      !pageInfo?.end_cursor
+    ) {
       return
     }
 
     try {
-      setLoading(true)
+      setLoadingMore(true)
       setError("")
 
-      const data = await searchSales(value.trim())
+      const data = await getSales({
+        first: 50,
+        after: pageInfo.end_cursor,
+      })
 
-      if (Array.isArray(data)) {
-        setSales(data)
-      } else {
-        setSales([data])
-      }
+      const newSales = data.edges.map(
+        (edge) => edge.node
+      )
+
+      setSales((current) => [
+        ...current,
+        ...newSales,
+      ])
+
+      setPageInfo(data.page_info)
     } catch (error) {
-      setSales([])
       setError(error.message)
     } finally {
-      setLoading(false)
+      setLoadingMore(false)
     }
   }
+
+    function handleSearchChange(event) {
+    const value = event.target.value
+
+    setSearchTerm(value)
+
+    if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current)
+    }
+
+    if (!value.trim()) {
+        loadSales()
+        return
+    }
+
+    searchTimeoutRef.current = setTimeout(() => {
+        handleSearch(value.trim())
+    }, 400)
+    }
+
+
+    async function handleSearch(value) {
+    try {
+        setLoading(true)
+        setError("")
+
+        const data = await searchSales(value)
+
+        setSales(
+        data.edges.map((edge) => edge.node)
+        )
+
+        setPageInfo(data.page_info)
+    } catch (error) {
+        setSales([])
+        setError(error.message)
+    } finally {
+        setLoading(false)
+    }
+    }
 
   function getDeliveryLabel(status) {
     if (status === "delivered") {
@@ -88,7 +156,9 @@ function Sales() {
     <section className="page-content">
       <div className="page-heading">
         <div>
-          <p className="eyebrow">Transactions</p>
+          <p className="eyebrow">
+            Transactions
+          </p>
 
           <h3>Sales</h3>
 
@@ -97,8 +167,11 @@ function Sales() {
           </p>
         </div>
 
-        <button className="primary-button"
-          onClick={() => navigate("/sales/new")}
+        <button
+          className="primary-button"
+          onClick={() =>
+            navigate("/sales/new")
+          }
         >
           + New Sale
         </button>
@@ -114,7 +187,7 @@ function Sales() {
           <input
             type="text"
             value={searchTerm}
-            onChange={handleSearch}
+            onChange={handleSearchChange}
             placeholder="Search by student number or name..."
           />
         </div>
@@ -204,84 +277,109 @@ function Sales() {
         {!loading &&
           !error &&
           sales.length > 0 && (
-            <div className="sales-list">
-              {sales.map((sale) => (
-                <div
-                  className="sale-row"
-                  key={sale.id}
-                  onClick={() => navigate(`/sales/${sale.id}`)}
-                >
-                  <div className="sale-student">
-                    <div className="student-avatar">
-                      <UserRound
+            <>
+              <div className="sales-list">
+                {sales.map((sale) => (
+                  <div
+                    className="sale-row"
+                    key={sale.id}
+                    onClick={() =>
+                      navigate(
+                        `/sales/${sale.id}`
+                      )
+                    }
+                  >
+                    <div className="sale-student">
+                      <div className="student-avatar">
+                        <UserRound
+                          size={17}
+                          strokeWidth={2}
+                        />
+                      </div>
+
+                      <div>
+                        <strong>
+                          {sale.student_name}
+                        </strong>
+
+                        <span>
+                          {sale.student_number}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="sale-items">
+                      <span>Items</span>
+
+                      <strong>
+                        {sale.lines?.length ?? 0}
+                      </strong>
+                    </div>
+
+                    <div className="sale-total">
+                      <span>Total</span>
+
+                      <strong>
+                        GHS {sale.total}
+                      </strong>
+                    </div>
+
+                    <div className="sale-status">
+                      <span
+                        className={`status-pill ${sale.payment_status}`}
+                      >
+                        {sale.payment_status ===
+                        "paid"
+                          ? "Paid"
+                          : sale.payment_status ===
+                              "partially_paid"
+                            ? "Partially paid"
+                            : "Unpaid"}
+                      </span>
+
+                      <span
+                        className={`delivery-pill ${sale.delivery_status}`}
+                      >
+                        {getDeliveryLabel(
+                          sale.delivery_status
+                        )}
+                      </span>
+                    </div>
+
+                    <button
+                      className="sale-action"
+                      title="View student purchases"
+                      onClick={() =>
+                        navigate(
+                          `/sales/${sale.id}`
+                        )
+                      }
+                    >
+                      <ArrowRight
                         size={17}
                         strokeWidth={2}
                       />
-                    </div>
-
-                    <div>
-                      <strong>
-                        {sale.student_name}
-                      </strong>
-
-                      <span>
-                        {sale.student_number}
-                      </span>
-                    </div>
+                    </button>
                   </div>
+                ))}
+              </div>
 
-                  <div className="sale-items">
-                    <span>Items</span>
-
-                    <strong>
-                      {sale.lines?.length ?? 0}
-                    </strong>
-                  </div>
-
-                  <div className="sale-total">
-                    <span>Total</span>
-
-                    <strong>
-                      GHS {sale.total}
-                    </strong>
-                  </div>
-
-                  <div className="sale-status">
-                    <span
-                      className={`status-pill ${sale.payment_status}`}
+              {pageInfo?.has_next_page &&
+                !searchTerm && (
+                  <div className="sales-load-more">
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={loadMore}
+                      disabled={loadingMore}
                     >
-                      {sale.payment_status === "paid"
-                        ? "Paid"
-                        : sale.payment_status ===
-                            "partially_paid"
-                          ? "Partially paid"
-                          : "Unpaid"}
-                    </span>
-
-                    <span
-                      className={`delivery-pill ${sale.delivery_status}`}
-                    >
-                      {getDeliveryLabel(
-                        sale.delivery_status
-                      )}
-                    </span>
+                      {loadingMore
+                        ? "Loading..."
+                        : "Load more"}
+                    </button>
                   </div>
-
-                  <button
-                    className="sale-action"
-                    title="View student purchases"
-                    onClick={() =>
-                      navigate(`/sales/${sale.id}`)
-                    }
-                  >
-                    <ArrowRight
-                      size={17}
-                      strokeWidth={2}
-                    />
-                  </button>
-                </div>
-              ))}
-            </div>
+                )}
+            </>
           )}
       </div>
     </section>

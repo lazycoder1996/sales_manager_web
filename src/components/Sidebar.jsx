@@ -5,77 +5,142 @@ import {
   Package,
   ShoppingCart,
   Store,
+  X,
 } from "lucide-react"
 
-function Sidebar() {
+function Sidebar({
+  isOpen,
+  onClose,
+}) {
+  function handleNavigation() {
+    onClose()
+  }
+
   return (
-    <aside className="sidebar">
-      <div className="brand">
-        <div className="brand-mark">SM</div>
+    <>
+      <div
+        className={`sidebar-overlay ${
+          isOpen ? "visible" : ""
+        }`}
+        onClick={onClose}
+      />
 
-        <div>
-          <h1>Sales Manager</h1>
-          <p>Uniform Inventory</p>
+      <aside
+        className={`sidebar ${
+          isOpen ? "open" : ""
+        }`}
+      >
+        <div className="brand">
+          <div className="brand-mark">
+            SM
+          </div>
+
+          <div>
+            <h1>Sales Manager</h1>
+            <p>Uniform Inventory</p>
+          </div>
+
+          <button
+            type="button"
+            className="sidebar-close"
+            onClick={onClose}
+            title="Close menu"
+          >
+            <X
+              size={19}
+              strokeWidth={2}
+            />
+          </button>
         </div>
-      </div>
 
-      <nav className="sidebar-nav">
-        <NavLink
-          to="/dashboard"
-          className={({ isActive }) =>
-            isActive ? "nav-item active" : "nav-item"
-          }
-        >
-          <LayoutDashboard size={18} strokeWidth={2} />
-          Dashboard
-        </NavLink>
+        <nav className="sidebar-nav">
+          <NavLink
+            to="/dashboard"
+            onClick={handleNavigation}
+            className={({ isActive }) =>
+              isActive
+                ? "nav-item active"
+                : "nav-item"
+            }
+          >
+            <LayoutDashboard
+              size={18}
+              strokeWidth={2}
+            />
+            Dashboard
+          </NavLink>
 
-        <NavLink
-          to="/sales"
-          className={({ isActive }) =>
-            isActive ? "nav-item active" : "nav-item"
-          }
-        >
-          <ShoppingCart size={18} strokeWidth={2} />
-          Sales
-        </NavLink>
+          <NavLink
+            to="/sales"
+            onClick={handleNavigation}
+            className={({ isActive }) =>
+              isActive
+                ? "nav-item active"
+                : "nav-item"
+            }
+          >
+            <ShoppingCart
+              size={18}
+              strokeWidth={2}
+            />
+            Sales
+          </NavLink>
 
-        <NavLink
-          to="/stock"
-          className={({ isActive }) =>
-            isActive ? "nav-item active" : "nav-item"
-          }
-        >
-          <Boxes size={18} strokeWidth={2} />
-          Stock
-        </NavLink>
+          <NavLink
+            to="/stock"
+            onClick={handleNavigation}
+            className={({ isActive }) =>
+              isActive
+                ? "nav-item active"
+                : "nav-item"
+            }
+          >
+            <Boxes
+              size={18}
+              strokeWidth={2}
+            />
+            Stock
+          </NavLink>
 
-        <NavLink
-          to="/sellers"
-          className={({ isActive }) =>
-            isActive ? "nav-item active" : "nav-item"
-          }
-        >
-          <Store size={18} strokeWidth={2} />
-          Sellers
-        </NavLink>
+          <NavLink
+            to="/sellers"
+            onClick={handleNavigation}
+            className={({ isActive }) =>
+              isActive
+                ? "nav-item active"
+                : "nav-item"
+            }
+          >
+            <Store
+              size={18}
+              strokeWidth={2}
+            />
+            Sellers
+          </NavLink>
 
-        <NavLink
-          to="/products"
-          className={({ isActive }) =>
-            isActive ? "nav-item active" : "nav-item"
-          }
-        >
-          <Package size={18} strokeWidth={2} />
-          Products
-        </NavLink>
-      </nav>
+          <NavLink
+            to="/products"
+            onClick={handleNavigation}
+            className={({ isActive }) =>
+              isActive
+                ? "nav-item active"
+                : "nav-item"
+            }
+          >
+            <Package
+              size={18}
+              strokeWidth={2}
+            />
+            Products
+          </NavLink>
+        </nav>
 
-      <div className="sidebar-footer">
-        <p>School Uniform Store</p>
-        <span>Inventory workspace</span>
-      </div>
-    </aside>
+        <div className="sidebar-footer">
+          <p>School Uniform Store</p>
+          <span>Inventory workspace</span>
+        </div>
+      </aside>
+    </>
   )
 }
 

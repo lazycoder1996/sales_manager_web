@@ -18,6 +18,8 @@ import {
   getSale,
 } from "../services/sales_api"
 
+import AdditionalPurchaseModal from "../components/AdditionalPurchaseModal"
+
 function SaleDetail() {
   const navigate = useNavigate()
   const { saleId } = useParams()
@@ -28,6 +30,9 @@ function SaleDetail() {
 
   const [showDelivery, setShowDelivery] =
     useState(false)
+
+    const [showAdditionalPurchase, setShowAdditionalPurchase] =
+  useState(false)
 
   const [deliveryQuantities, setDeliveryQuantities] =
     useState({})
@@ -355,19 +360,32 @@ function SaleDetail() {
           </p>
         </div>
 
-        {hasUndeliveredItems() &&
-          sale.payment_status === "paid" && (
-            <button
-              className="primary-button"
-              onClick={openDelivery}
-            >
-              <Package
-                size={16}
-                strokeWidth={2}
-              />
-              Deliver Items
-            </button>
-          )}
+    <div className="page-heading-actions">
+    {sale.payment_status === "paid" && (
+        <button
+        className="secondary-button"
+        onClick={() =>
+            setShowAdditionalPurchase(true)
+        }
+        >
+        New Purchase
+        </button>
+    )}
+
+    {hasUndeliveredItems() &&
+        sale.payment_status === "paid" && (
+        <button
+            className="primary-button"
+            onClick={openDelivery}
+        >
+            <Package
+            size={16}
+            strokeWidth={2}
+            />
+            Deliver Items
+        </button>
+        )}
+    </div>
       </div>
 
       <div className="sale-detail-overview">
@@ -789,6 +807,19 @@ function SaleDetail() {
           </div>
         </div>
       )}
+
+        {showAdditionalPurchase && (
+    <AdditionalPurchaseModal
+        sale={sale}
+        onClose={() =>
+        setShowAdditionalPurchase(false)
+        }
+        onSuccess={async () => {
+        setShowAdditionalPurchase(false)
+        await loadSale()
+        }}
+    />
+    )}
     </section>
   )
 }

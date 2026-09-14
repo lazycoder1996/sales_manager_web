@@ -1,27 +1,29 @@
 import apiClient from "./api_client"
 
-export function getSales() {
-  return apiClient.get("/sales/")
+export function getSales({
+  first = 50,
+  after = "",
+} = {}) {
+  const params = new URLSearchParams()
+
+  params.set("first", first)
+
+  if (after) {
+    params.set("after", after)
+  }
+
+  return apiClient.get(
+    `/sales/?${params.toString()}`
+  )
 }
 
 export function searchSales(searchTerm) {
   const params = new URLSearchParams()
-  params.set("student_number", searchTerm)
+  params.set("search", searchTerm)
 
-  return apiClient
-    .get(`/sales/?${params.toString()}`)
-    .catch((error) => {
-      if (error.message !== "Sale not found.") {
-        throw error
-      }
-
-      params.set("student_number", "")
-      params.set("student_name", searchTerm)
-
-      return apiClient.get(
-        `/sales/?${params.toString()}`
-      )
-    })
+  return apiClient.get(
+    `/sales/?${params.toString()}`
+  )
 }
 
 export function getSale(saleId) {
@@ -55,6 +57,16 @@ export function deliverSale(
 ) {
   return apiClient.post(
     `/sales/${saleId}/deliver/`,
+    data
+  )
+}
+
+export function createAdditionalPurchase(
+  saleId,
+  data
+) {
+  return apiClient.post(
+    `/sales/${saleId}/purchases/`,
     data
   )
 }

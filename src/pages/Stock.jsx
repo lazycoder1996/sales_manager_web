@@ -788,7 +788,7 @@ function Stock() {
 
                     <button
                       type="button"
-                      className="secondary-button"
+                      className="secondary-button additional-purchase-add-button"
                       onClick={addLine}
                     >
                       <Plus
