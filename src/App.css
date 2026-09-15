@@ -4088,3 +4088,376 @@ body {
   font-size: 13px;
   font-weight: 700;
 }
+
+.stock-receipt-row {
+  grid-template-columns:
+    minmax(180px, 1.6fr)
+    minmax(150px, 1fr)
+    minmax(130px, 1fr)
+    70px
+    70px
+    34px;
+}
+
+.stock-receipt-note {
+  display: block;
+  margin-top: 3px;
+  font-size: 10px;
+  font-weight: 400;
+  color: #667085;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.stock-receipt-date {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.stock-receipt-date small {
+  font-size: 10px;
+  color: #667085;
+}
+
+.stock-receipt-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  color: #98a2b3;
+}
+
+@media (max-width: 900px) {
+  .stock-receipts-list-header {
+    display: none;
+  }
+
+  .stock-receipt-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .stock-receipt-row > .stock-size,
+  .stock-receipt-row > .stock-receipt-date,
+  .stock-receipt-row > span:nth-child(4),
+  .stock-receipt-row > .stock-available {
+    font-size: 11px;
+  }
+
+  .stock-receipt-row > .stock-size {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: start;
+  }
+
+  .stock-receipt-row > .stock-receipt-date {
+    grid-column: 2;
+    grid-row: 2;
+    text-align: right;
+  }
+
+  .stock-receipt-row > span:nth-child(4) {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  .stock-receipt-row > .stock-available {
+    grid-column: 2;
+    grid-row: 3;
+    justify-self: end;
+  }
+
+  .stock-receipt-arrow {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .stock-receipt-row {
+    padding: 14px;
+  }
+
+  .stock-receipt-note {
+    max-width: 180px;
+  }
+}
+
+.stock-receipt-detail-card {
+  background: #ffffff;
+  border: 1px solid #eaecf0;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.stock-receipt-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #eeeeee;
+}
+
+.stock-receipt-detail-icon {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #f0f8d9;
+  color: #709600;
+}
+
+.stock-receipt-detail-header h4 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 650;
+  color: #101828;
+}
+
+.stock-receipt-detail-header p {
+  margin: 0;
+  font-size: 11px;
+  color: #667085;
+}
+
+.stock-receipt-meta {
+  display: grid;
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  padding-top: 18px;
+}
+
+.stock-receipt-meta > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.stock-receipt-meta span,
+.stock-receipt-notes > span {
+  font-size: 10px;
+  font-weight: 600;
+  color: #667085;
+}
+
+.stock-receipt-meta strong {
+  font-size: 12px;
+  font-weight: 600;
+  color: #101828;
+}
+
+.stock-receipt-notes {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #eeeeee;
+}
+
+.stock-receipt-notes p {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #475467;
+}
+
+.stock-receipt-items-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  border-bottom: 1px solid #eeeeee;
+}
+
+.stock-receipt-items-header h4 {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 650;
+  color: #101828;
+}
+
+.stock-receipt-items-header p {
+  margin: 0;
+  font-size: 11px;
+  color: #667085;
+}
+
+.stock-receipt-items-summary {
+  display: flex;
+  align-items: flex-end;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.stock-receipt-items-summary span {
+  font-size: 10px;
+  color: #667085;
+}
+
+.stock-receipt-items-summary strong {
+  font-size: 12px;
+  color: #101828;
+}
+
+.stock-receipt-lines-header {
+  grid-template-columns:
+    minmax(180px, 1.6fr)
+    minmax(100px, 0.8fr)
+    100px
+    120px
+    120px;
+}
+
+.stock-receipt-line-row {
+  display: grid;
+  grid-template-columns:
+    minmax(180px, 1.6fr)
+    minmax(100px, 0.8fr)
+    100px
+    120px
+    120px;
+  align-items: center;
+  gap: 16px;
+  min-height: 68px;
+  padding: 12px 20px;
+  border-bottom: 1px solid #f2f4f7;
+  font-size: 12px;
+  color: #475467;
+}
+
+.stock-receipt-line-row:last-child {
+  border-bottom: 0;
+}
+
+.stock-receipt-line-row strong {
+  color: #101828;
+  font-weight: 600;
+}
+
+.stock-receipt-summary {
+  display: flex;
+  justify-content: flex-end;
+  gap: 36px;
+  margin-top: 14px;
+}
+
+.stock-receipt-summary > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.stock-receipt-summary span {
+  font-size: 10px;
+  font-weight: 600;
+  color: #667085;
+}
+
+.stock-receipt-summary strong {
+  font-size: 14px;
+  font-weight: 650;
+  color: #101828;
+}
+
+@media (max-width: 800px) {
+  .stock-receipt-meta {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .stock-receipt-lines-header {
+    display: none;
+  }
+
+  .stock-receipt-line-row {
+    grid-template-columns: 1fr auto;
+    gap: 10px 16px;
+    padding: 15px 16px;
+  }
+
+  .stock-receipt-line-row > .stock-product {
+    grid-column: 1 / -1;
+  }
+
+  .stock-receipt-line-row > span:nth-child(2)::before {
+    content: "Size";
+    display: block;
+    margin-bottom: 3px;
+    font-size: 9px;
+    font-weight: 600;
+    color: #98a2b3;
+  }
+
+  .stock-receipt-line-row > strong:nth-child(3)::before {
+    content: "Quantity";
+    display: block;
+    margin-bottom: 3px;
+    font-size: 9px;
+    font-weight: 600;
+    color: #98a2b3;
+  }
+
+  .stock-receipt-line-row > span:nth-child(4)::before {
+    content: "Unit cost";
+    display: block;
+    margin-bottom: 3px;
+    font-size: 9px;
+    font-weight: 600;
+    color: #98a2b3;
+  }
+
+  .stock-receipt-line-row > strong:nth-child(5)::before {
+    content: "Total";
+    display: block;
+    margin-bottom: 3px;
+    font-size: 9px;
+    font-weight: 600;
+    color: #98a2b3;
+  }
+
+  .stock-receipt-line-row > span:nth-child(4),
+  .stock-receipt-line-row > strong:nth-child(5) {
+    text-align: right;
+  }
+
+  .stock-receipt-summary {
+    gap: 24px;
+  }
+}
+
+@media (max-width: 560px) {
+  .stock-receipt-detail-card {
+    padding: 16px;
+  }
+
+  .stock-receipt-meta {
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 12px;
+  }
+
+  .stock-receipt-items-header {
+    align-items: flex-start;
+    padding: 16px;
+  }
+
+  .stock-receipt-items-summary {
+    flex-shrink: 0;
+  }
+
+  .stock-receipt-summary {
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .stock-receipt-summary > div {
+    align-items: flex-start;
+  }
+}

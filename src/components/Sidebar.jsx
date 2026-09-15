@@ -3,6 +3,7 @@ import {
   Boxes,
   LayoutDashboard,
   Package,
+  Receipt,
   ShoppingCart,
   Store,
   X,
@@ -101,6 +102,22 @@ function Sidebar({
             />
             Stock
           </NavLink>
+
+        <NavLink
+            to="/stock-receipts"
+            onClick={handleNavigation}
+            className={({ isActive }) =>
+                isActive
+                ? "nav-item active"
+                : "nav-item"
+            }
+            >
+            <Receipt
+                size={18}
+                strokeWidth={2}
+            />
+            Stock Receipts
+            </NavLink>
 
           <NavLink
             to="/sellers"
