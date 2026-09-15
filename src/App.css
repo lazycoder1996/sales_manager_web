@@ -3996,3 +3996,95 @@ body {
   max-width: 100%;
   overflow-x: clip;
 }
+
+.sales-filter-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.sales-filter-select,
+.sales-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sales-filter-select label,
+.sales-filter-field label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #667085;
+}
+
+.sales-filter-select select,
+.sales-filter-field input {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #101828;
+  font: inherit;
+  font-size: 12px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.sales-filter-select select {
+  min-width: 150px;
+}
+
+.sales-filter-field input {
+  min-width: 145px;
+}
+
+.sales-filter-select select:focus,
+.sales-filter-field input:focus {
+  border-color: #98c91c;
+}
+
+.sales-filter-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sales-filter-actions .primary-button,
+.sales-filter-actions .secondary-button {
+  height: 40px;
+}
+
+.summary-payment-breakdown {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #eeeeee;
+}
+
+.summary-payment-breakdown > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.summary-payment-breakdown span {
+  font-size: 10px;
+  font-weight: 500;
+  color: #667085;
+}
+
+.summary-payment-breakdown strong {
+  font-size: 12px;
+  font-weight: 600;
+  color: #101828;
+}
+
+.dashboard-stat-icon span {
+  font-size: 13px;
+  font-weight: 700;
+}

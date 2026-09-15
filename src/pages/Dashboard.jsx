@@ -10,13 +10,22 @@ import {
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
-import { getDashboard } from "../services/dashboard_api"
+import {
+  getDashboard,
+  getTodaysSales,
+} from "../services/dashboard_api"
+
 
 function Dashboard() {
+
+    
   const navigate = useNavigate()
 
   const [dashboard, setDashboard] =
     useState(null)
+
+    const [todaysSales, setTodaysSales] =
+  useState(null)
 
   const [loading, setLoading] =
     useState(true)
@@ -28,20 +37,25 @@ function Dashboard() {
     loadDashboard()
   }, [])
 
-  async function loadDashboard() {
+    async function loadDashboard() {
     try {
-      setLoading(true)
-      setError("")
+        setLoading(true)
+        setError("")
 
-      const data = await getDashboard()
+        const [dashboardData, todaysSalesData] =
+        await Promise.all([
+            getDashboard(),
+            getTodaysSales(),
+        ])
 
-      setDashboard(data)
+        setDashboard(dashboardData)
+        setTodaysSales(todaysSalesData)
     } catch (error) {
-      setError(error.message)
+        setError(error.message)
     } finally {
-      setLoading(false)
+        setLoading(false)
     }
-  }
+    }
 
   function formatMoney(value) {
     return `GHS ${Number(value || 0).toFixed(2)}`
@@ -163,6 +177,7 @@ function Dashboard() {
   }
 
   const sales = dashboard.sales || {}
+  const today = todaysSales || {}
   const payments = dashboard.payments || {}
   const delivery = dashboard.delivery || {}
   const stock = dashboard.stock || []
@@ -211,6 +226,46 @@ function Dashboard() {
       </div>
 
       <div className="summary-grid">
+<article className="summary-card">
+  <div className="summary-card-header">
+    <span>Today's sales</span>
+
+    <span className="card-icon">
+      <ShoppingCart
+        size={18}
+        strokeWidth={2}
+      />
+    </span>
+  </div>
+
+  <strong>
+    {formatMoney(today.total_value)}
+  </strong>
+
+  <p>
+    {today.count || 0}{" "}
+    {today.count === 1
+      ? "sale"
+      : "sales"}{" "}
+    today
+  </p>
+
+  <div className="summary-payment-breakdown">
+    <div>
+      <span>Cash</span>
+      <strong>
+        {formatMoney(today.cash)}
+      </strong>
+    </div>
+
+    <div>
+      <span>MoMo</span>
+      <strong>
+        {formatMoney(today.momo)}
+      </strong>
+    </div>
+  </div>
+</article>
         <article className="summary-card">
           <div className="summary-card-header">
             <span>Total sales</span>
@@ -347,6 +402,38 @@ function Dashboard() {
                 </strong>
               </div>
             </div>
+
+            <div>
+                <div className="dashboard-stat-icon">
+                    <span>₵</span>
+                </div>
+
+                <div>
+                    <span>
+                    Cash
+                    </span>
+
+                    <strong>
+                    {formatMoney(sales.cash)}
+                    </strong>
+                </div>
+                </div>
+
+                <div>
+                <div className="dashboard-stat-icon">
+                    <span>₵</span>
+                </div>
+
+                <div>
+                    <span>
+                    MoMo
+                    </span>
+
+                    <strong>
+                    {formatMoney(sales.momo)}
+                    </strong>
+                </div>
+                </div>
 
             <div>
               <div className="dashboard-stat-icon">

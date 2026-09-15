@@ -1,7 +1,7 @@
 import {
   useEffect,
-  useState,
   useRef,
+  useState,
 } from "react"
 import {
   useNavigate,
@@ -15,7 +15,6 @@ import {
 
 import {
   getSales,
-  searchSales,
 } from "../services/sales_api"
 
 function Sales() {
@@ -26,42 +25,100 @@ function Sales() {
   const [pageInfo, setPageInfo] = useState(null)
 
   const [searchTerm, setSearchTerm] = useState("")
-  const [loading, setLoading] = useState(true)
+
+  const [dateMode, setDateMode] =
+    useState("current")
+
+  const [selectedDate, setSelectedDate] =
+    useState("")
+
+  const [dateFrom, setDateFrom] =
+    useState("")
+
+  const [dateTo, setDateTo] =
+    useState("")
+
+  const [loading, setLoading] =
+    useState(true)
+
   const [loadingMore, setLoadingMore] =
     useState(false)
 
-  const [error, setError] = useState("")
+  const [error, setError] =
+    useState("")
 
-    useEffect(() => {
+  useEffect(() => {
     loadSales()
 
     return () => {
-        if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current)
-        }
+      if (searchTimeoutRef.current) {
+        clearTimeout(
+          searchTimeoutRef.current
+        )
+      }
     }
-    }, [])
+  }, [])
 
-  async function loadSales() {
+  function getDateFilters() {
+    if (dateMode === "date") {
+      return {
+        date: selectedDate,
+      }
+    }
+
+    if (dateMode === "range") {
+      return {
+        dateFrom,
+        dateTo,
+      }
+    }
+
+    return {}
+  }
+
+  async function loadSales({
+    after = "",
+    append = false,
+  } = {}) {
     try {
-      setLoading(true)
+      if (append) {
+        setLoadingMore(true)
+      } else {
+        setLoading(true)
+      }
+
       setError("")
 
       const data = await getSales({
         first: 50,
+        after,
+        search: searchTerm.trim(),
+        ...getDateFilters(),
       })
 
-      setSales(
-        data.edges.map(
-          (edge) => edge.node
-        )
+      const newSales = data.edges.map(
+        (edge) => edge.node
       )
+
+      if (append) {
+        setSales((current) => [
+          ...current,
+          ...newSales,
+        ])
+      } else {
+        setSales(newSales)
+      }
 
       setPageInfo(data.page_info)
     } catch (error) {
+      if (!append) {
+        setSales([])
+      }
+
       setError(error.message)
     } finally {
       setLoading(false)
+      setLoadingMore(false)
     }
   }
 
@@ -74,71 +131,94 @@ function Sales() {
       return
     }
 
-    try {
-      setLoadingMore(true)
-      setError("")
-
-      const data = await getSales({
-        first: 50,
-        after: pageInfo.end_cursor,
-      })
-
-      const newSales = data.edges.map(
-        (edge) => edge.node
-      )
-
-      setSales((current) => [
-        ...current,
-        ...newSales,
-      ])
-
-      setPageInfo(data.page_info)
-    } catch (error) {
-      setError(error.message)
-    } finally {
-      setLoadingMore(false)
-    }
+    await loadSales({
+      after: pageInfo.end_cursor,
+      append: true,
+    })
   }
 
-    function handleSearchChange(event) {
+  function handleSearchChange(event) {
     const value = event.target.value
 
     setSearchTerm(value)
 
     if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current)
-    }
-
-    if (!value.trim()) {
-        loadSales()
-        return
+      clearTimeout(
+        searchTimeoutRef.current
+      )
     }
 
     searchTimeoutRef.current = setTimeout(() => {
-        handleSearch(value.trim())
+      loadSales()
     }, 400)
+  }
+
+  function handleDateModeChange(event) {
+    const value = event.target.value
+
+    setDateMode(value)
+
+    if (value === "current") {
+      setSelectedDate("")
+      setDateFrom("")
+      setDateTo("")
+
+      loadSales({
+        after: "",
+      })
+    }
+  }
+
+  function handleDateChange(event) {
+    setSelectedDate(event.target.value)
+  }
+
+  function handleDateFromChange(event) {
+    setDateFrom(event.target.value)
+  }
+
+  function handleDateToChange(event) {
+    setDateTo(event.target.value)
+  }
+
+  function applyDateFilter() {
+    if (dateMode === "date" && !selectedDate) {
+      return
     }
 
-
-    async function handleSearch(value) {
-    try {
-        setLoading(true)
-        setError("")
-
-        const data = await searchSales(value)
-
-        setSales(
-        data.edges.map((edge) => edge.node)
-        )
-
-        setPageInfo(data.page_info)
-    } catch (error) {
-        setSales([])
-        setError(error.message)
-    } finally {
-        setLoading(false)
+    if (
+      dateMode === "range" &&
+      (!dateFrom || !dateTo)
+    ) {
+      return
     }
+
+    if (
+      dateMode === "range" &&
+      dateFrom > dateTo
+    ) {
+      setError(
+        "The start date cannot be after the end date."
+      )
+      return
     }
+
+    loadSales({
+      after: "",
+    })
+  }
+
+  function clearDateFilter() {
+    setDateMode("current")
+    setSelectedDate("")
+    setDateFrom("")
+    setDateTo("")
+    setError("")
+
+    loadSales({
+      after: "",
+    })
+  }
 
   function getDeliveryLabel(status) {
     if (status === "delivered") {
@@ -151,6 +231,16 @@ function Sales() {
 
     return "Awaiting delivery"
   }
+
+  const hasDateFilter =
+    dateMode !== "current"
+
+  const hasAppliedDateFilter =
+    dateMode === "date"
+      ? Boolean(selectedDate)
+      : dateMode === "range"
+        ? Boolean(dateFrom && dateTo)
+        : false
 
   return (
     <section className="page-content">
@@ -178,6 +268,97 @@ function Sales() {
       </div>
 
       <div className="sales-search-card">
+        <div className="sales-filter-row">
+          <div className="sales-filter-select">
+            <label htmlFor="sales-date-mode">
+              View
+            </label>
+
+            <select
+              id="sales-date-mode"
+              value={dateMode}
+              onChange={handleDateModeChange}
+            >
+              <option value="current">
+                Current view
+              </option>
+
+              <option value="date">
+                Specific date
+              </option>
+
+              <option value="range">
+                Date range
+              </option>
+            </select>
+          </div>
+
+          {dateMode === "date" && (
+            <div className="sales-filter-field">
+              <label htmlFor="sales-date">
+                Date
+              </label>
+
+              <input
+                id="sales-date"
+                type="date"
+                value={selectedDate}
+                onChange={handleDateChange}
+              />
+            </div>
+          )}
+
+          {dateMode === "range" && (
+            <>
+              <div className="sales-filter-field">
+                <label htmlFor="sales-date-from">
+                  From
+                </label>
+
+                <input
+                  id="sales-date-from"
+                  type="date"
+                  value={dateFrom}
+                  onChange={handleDateFromChange}
+                />
+              </div>
+
+              <div className="sales-filter-field">
+                <label htmlFor="sales-date-to">
+                  To
+                </label>
+
+                <input
+                  id="sales-date-to"
+                  type="date"
+                  value={dateTo}
+                  onChange={handleDateToChange}
+                />
+              </div>
+            </>
+          )}
+
+          {hasDateFilter && (
+            <div className="sales-filter-actions page-heading-actions">
+              <button
+                type="button"
+                className="primary-button"
+                onClick={applyDateFilter}
+              >
+                Apply
+              </button>
+
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={clearDateFilter}
+              >
+                Clear
+              </button>
+            </div>
+          )}
+        </div>
+
         <div className="sales-search">
           <Search
             size={18}
@@ -242,7 +423,7 @@ function Sales() {
 
             <button
               className="secondary-button"
-              onClick={loadSales}
+              onClick={() => loadSales()}
             >
               Try again
             </button>
@@ -263,13 +444,17 @@ function Sales() {
               <h5>
                 {searchTerm
                   ? "No students found"
-                  : "No sales recorded yet"}
+                  : hasAppliedDateFilter
+                    ? "No sales found"
+                    : "No sales recorded yet"}
               </h5>
 
               <p>
                 {searchTerm
                   ? "Try another student number or name."
-                  : "Once you record a sale, it will appear here."}
+                  : hasAppliedDateFilter
+                    ? "There are no sales matching the selected date."
+                    : "Once you record a sale, it will appear here."}
               </p>
             </div>
           )}
@@ -364,21 +549,20 @@ function Sales() {
                 ))}
               </div>
 
-              {pageInfo?.has_next_page &&
-                !searchTerm && (
-                  <div className="sales-load-more">
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={loadMore}
-                      disabled={loadingMore}
-                    >
-                      {loadingMore
-                        ? "Loading..."
-                        : "Load more"}
-                    </button>
-                  </div>
-                )}
+              {pageInfo?.has_next_page && (
+                <div className="sales-load-more">
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    onClick={loadMore}
+                    disabled={loadingMore}
+                  >
+                    {loadingMore
+                      ? "Loading..."
+                      : "Load more"}
+                  </button>
+                </div>
+              )}
             </>
           )}
       </div>
