@@ -5,10 +5,14 @@ import {
 import {
   ArrowLeft,
   Banknote,
+  Check,
   Package,
   Plus,
+  Search,
   Smartphone,
   Trash2,
+  UserRound,
+  X,
 } from "lucide-react"
 import {
   useNavigate,
@@ -22,18 +26,34 @@ import {
   completeSale,
 } from "../services/sales_api"
 
+import {
+  getStudents,
+} from "../services/students_api"
+
+
 function NewSale() {
   const navigate = useNavigate()
 
   const [products, setProducts] = useState([])
 
-  const [studentNumber, setStudentNumber] =
+  const [studentSearch, setStudentSearch] =
     useState("")
-  const [studentName, setStudentName] =
+
+  const [studentResults, setStudentResults] =
+    useState([])
+
+  const [studentSearchLoading, setStudentSearchLoading] =
+    useState(false)
+
+  const [studentSearchError, setStudentSearchError] =
     useState("")
+
+  const [selectedStudent, setSelectedStudent] =
+    useState(null)
 
   const [cashAmount, setCashAmount] =
     useState("")
+
   const [momoAmount, setMomoAmount] =
     useState("")
 
@@ -43,16 +63,35 @@ function NewSale() {
 
   const [loadingProducts, setLoadingProducts] =
     useState(true)
+
   const [productsError, setProductsError] =
     useState("")
 
   const [saving, setSaving] = useState(false)
+
   const [formError, setFormError] =
     useState("")
+
 
   useEffect(() => {
     loadProducts()
   }, [])
+
+
+  useEffect(() => {
+    if (!studentSearch.trim()) {
+      setStudentResults([])
+      setStudentSearchError("")
+      return
+    }
+
+    const timer = setTimeout(() => {
+      searchStudents(studentSearch)
+    }, 400)
+
+    return () => clearTimeout(timer)
+  }, [studentSearch])
+
 
   async function loadProducts() {
     try {
@@ -67,11 +106,42 @@ function NewSale() {
         )
       )
     } catch (error) {
-      setProductsError(error.message)
+      setProductsError(
+        error.message ||
+        "Failed to load products."
+      )
     } finally {
       setLoadingProducts(false)
     }
   }
+
+
+  async function searchStudents(searchTerm) {
+    try {
+      setStudentSearchLoading(true)
+      setStudentSearchError("")
+
+      const data = await getStudents({
+        first: 20,
+        search: searchTerm,
+      })
+
+      const students =
+        data.edges?.map(
+          (edge) => edge.node
+        ) || []
+
+      setStudentResults(students)
+    } catch (error) {
+      setStudentSearchError(
+        error.message ||
+        "Failed to search students."
+      )
+    } finally {
+      setStudentSearchLoading(false)
+    }
+  }
+
 
   function createEmptyLine() {
     return {
@@ -81,6 +151,45 @@ function NewSale() {
       quantity: 1,
     }
   }
+
+
+  function handleStudentSearch(event) {
+    const value = event.target.value
+
+    setStudentSearch(value)
+
+    if (selectedStudent) {
+      setSelectedStudent(null)
+    }
+  }
+
+
+  function selectStudent(student) {
+    setSelectedStudent(student)
+    setStudentSearch("")
+    setStudentResults([])
+    setStudentSearchError("")
+    setFormError("")
+  }
+
+
+  function clearStudent() {
+    setSelectedStudent(null)
+    setStudentSearch("")
+    setStudentResults([])
+  }
+
+
+  function getStudentName(student) {
+    return [
+      student.firstname,
+      student.middlename,
+      student.surname,
+    ]
+      .filter(Boolean)
+      .join(" ")
+  }
+
 
   function handleLineChange(
     lineId,
@@ -109,12 +218,14 @@ function NewSale() {
     )
   }
 
+
   function addLine() {
     setLines((current) => [
       ...current,
       createEmptyLine(),
     ])
   }
+
 
   function removeLine(lineId) {
     if (lines.length === 1) {
@@ -128,6 +239,7 @@ function NewSale() {
     )
   }
 
+
   function getProduct(productId) {
     return products.find(
       (product) =>
@@ -135,6 +247,7 @@ function NewSale() {
         String(productId)
     )
   }
+
 
   function getActiveVariants(product) {
     if (!product?.variants) {
@@ -146,9 +259,11 @@ function NewSale() {
     )
   }
 
+
   function getLineProduct(line) {
     return getProduct(line.productId)
   }
+
 
   function getLineVariant(
     line,
@@ -165,6 +280,7 @@ function NewSale() {
     )
   }
 
+
   function getLineTotal(line) {
     const product = getLineProduct(line)
 
@@ -178,28 +294,30 @@ function NewSale() {
     )
   }
 
+
   const total = lines.reduce(
     (sum, line) =>
       sum + getLineTotal(line),
     0
   )
 
+
   const cash = Number(cashAmount || 0)
   const momo = Number(momoAmount || 0)
-  const paymentTotal = cash + momo
+
+  const paymentTotal =
+    cash + momo
+
   const paymentDifference =
     paymentTotal - total
 
   const isPaymentComplete =
     Math.abs(paymentDifference) < 0.01
 
-  function validateForm() {
-    if (!studentNumber.trim()) {
-      return "Student number is required."
-    }
 
-    if (!studentName.trim()) {
-      return "Student name is required."
+  function validateForm() {
+    if (!selectedStudent) {
+      return "Select a student."
     }
 
     if (lines.length === 0) {
@@ -212,7 +330,9 @@ function NewSale() {
       index += 1
     ) {
       const line = lines[index]
-      const product = getLineProduct(line)
+
+      const product =
+        getLineProduct(line)
 
       if (!product) {
         return `Select a product for item ${
@@ -246,7 +366,9 @@ function NewSale() {
     }
 
     if (cash < 0 || momo < 0) {
-      return "Payment amounts cannot be negative."
+      return (
+        "Payment amounts cannot be negative."
+      )
     }
 
     if (!isPaymentComplete) {
@@ -258,6 +380,7 @@ function NewSale() {
 
     return ""
   }
+
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -276,11 +399,8 @@ function NewSale() {
       setSaving(true)
 
       const sale = await completeSale({
-        student_number:
-          studentNumber.trim(),
-
-        student_name:
-          studentName.trim(),
+        student:
+          selectedStudent.id,
 
         sold_at:
           new Date().toISOString(),
@@ -289,11 +409,12 @@ function NewSale() {
 
         lines: lines.map((line) => ({
           product: line.productId,
+
           product_variant:
             line.variantId || null,
-          quantity: Number(
-            line.quantity
-          ),
+
+          quantity:
+            Number(line.quantity),
         })),
 
         cash_amount:
@@ -306,13 +427,19 @@ function NewSale() {
           new Date().toISOString(),
       })
 
-      navigate(`/sales/${sale.id}`)
+      navigate(
+        `/sales/${sale.id}`
+      )
     } catch (error) {
-      setFormError(error.message)
+      setFormError(
+        error.message ||
+        "Failed to record sale."
+      )
     } finally {
       setSaving(false)
     }
   }
+
 
   if (loadingProducts) {
     return (
@@ -330,13 +457,14 @@ function NewSale() {
           </h5>
 
           <p>
-            Getting available products for this
-            sale.
+            Getting available products for
+            this sale.
           </p>
         </div>
       </section>
     )
   }
+
 
   if (productsError) {
     return (
@@ -352,6 +480,7 @@ function NewSale() {
               size={17}
               strokeWidth={2}
             />
+
             Back to Sales
           </button>
         </div>
@@ -380,8 +509,10 @@ function NewSale() {
     )
   }
 
+
   return (
     <section className="page-content">
+
       <div className="page-heading">
         <div>
           <button
@@ -394,6 +525,7 @@ function NewSale() {
               size={17}
               strokeWidth={2}
             />
+
             Back to Sales
           </button>
 
@@ -401,7 +533,9 @@ function NewSale() {
             Transactions
           </p>
 
-          <h3>New Sale</h3>
+          <h3>
+            New Sale
+          </h3>
 
           <p className="page-description">
             Record a purchase for a student.
@@ -409,11 +543,14 @@ function NewSale() {
         </div>
       </div>
 
+
       <form
         className="new-sale-form"
         onSubmit={handleSubmit}
       >
+
         <article className="content-card">
+
           <div className="content-card-header">
             <div>
               <h4>
@@ -421,54 +558,173 @@ function NewSale() {
               </h4>
 
               <p>
-                Enter the student's details for
-                this purchase.
+                Search and select the student
+                making this purchase.
               </p>
             </div>
           </div>
 
-          <div className="new-sale-student-grid">
-            <div className="form-field">
-              <label htmlFor="student-number">
-                Student number
-              </label>
 
-              <input
-                id="student-number"
-                type="text"
-                value={studentNumber}
-                onChange={(event) =>
-                  setStudentNumber(
-                    event.target.value
-                  )
-                }
-                placeholder="e.g. EA-005-25"
-                autoFocus
-              />
+          {!selectedStudent && (
+            <div className="student-sale-search">
+
+              <div className="form-field">
+
+                <label htmlFor="student-search">
+                  Student
+                </label>
+
+                <div className="student-sale-search-input">
+
+                  <Search
+                    size={17}
+                    strokeWidth={2}
+                  />
+
+                  <input
+                    id="student-search"
+                    type="text"
+                    value={studentSearch}
+                    onChange={
+                      handleStudentSearch
+                    }
+                    placeholder={
+                      "Search by admission number or name"
+                    }
+                    autoFocus
+                  />
+
+                  {studentSearchLoading && (
+                    <span>
+                      Searching...
+                    </span>
+                  )}
+
+                </div>
+
+              </div>
+
+
+              {studentSearchError && (
+                <div className="form-error">
+                  {studentSearchError}
+                </div>
+              )}
+
+
+              {studentSearch.trim() &&
+                !studentSearchLoading &&
+                studentResults.length === 0 &&
+                !studentSearchError && (
+                  <div className="student-sale-search-empty">
+                    No active students found.
+                  </div>
+                )}
+
+
+              {studentResults.length > 0 && (
+                <div className="student-sale-results">
+
+                  {studentResults.map(
+                    (student) => (
+                      <button
+                        type="button"
+                        className="student-sale-result"
+                        key={student.id}
+                        onClick={() =>
+                          selectStudent(
+                            student
+                          )
+                        }
+                      >
+
+                        <div className="student-sale-result-icon">
+                          <UserRound
+                            size={18}
+                            strokeWidth={2}
+                          />
+                        </div>
+
+                        <div className="student-sale-result-info">
+
+                          <strong>
+                            {getStudentName(
+                              student
+                            )}
+                          </strong>
+
+                          <span>
+                            {student.admission_number ||
+                              "No admission number"}
+                          </span>
+
+                        </div>
+
+                      </button>
+                    )
+                  )}
+
+                </div>
+              )}
+
             </div>
+          )}
 
-            <div className="form-field">
-              <label htmlFor="student-name">
-                Student name
-              </label>
 
-              <input
-                id="student-name"
-                type="text"
-                value={studentName}
-                onChange={(event) =>
-                  setStudentName(
-                    event.target.value
-                  )
-                }
-                placeholder="e.g. Abdul Rahman"
-              />
+          {selectedStudent && (
+            <div className="selected-sale-student">
+
+              <div className="selected-sale-student-icon">
+                <UserRound
+                  size={20}
+                  strokeWidth={2}
+                />
+              </div>
+
+
+              <div className="selected-sale-student-info">
+
+                <span>
+                  Selected student
+                </span>
+
+                <strong>
+                  {getStudentName(
+                    selectedStudent
+                  )}
+                </strong>
+
+                <small>
+                  {selectedStudent.admission_number ||
+                    "No admission number"}
+                </small>
+
+              </div>
+
+
+              <button
+                type="button"
+                className="selected-sale-student-remove"
+                onClick={clearStudent}
+                disabled={saving}
+                title="Change student"
+              >
+                <X
+                  size={17}
+                  strokeWidth={2}
+                />
+              </button>
+
             </div>
-          </div>
+          )}
+
         </article>
 
+
         <article className="content-card">
+
           <div className="content-card-header">
+
             <div>
               <h4>
                 Purchase items
@@ -486,11 +742,15 @@ function NewSale() {
                 ? "item"
                 : "items"}
             </span>
+
           </div>
 
+
           <div className="new-sale-lines">
+
             {lines.map(
               (line, index) => {
+
                 const product =
                   getLineProduct(line)
 
@@ -510,11 +770,14 @@ function NewSale() {
                     className="new-sale-line"
                     key={line.id}
                   >
+
                     <div className="new-sale-line-number">
                       {index + 1}
                     </div>
 
+
                     <div className="form-field">
+
                       <label
                         htmlFor={`product-${line.id}`}
                       >
@@ -555,10 +818,14 @@ function NewSale() {
                             </option>
                           )
                         )}
+
                       </select>
+
                     </div>
 
+
                     <div className="form-field">
+
                       <label
                         htmlFor={`variant-${line.id}`}
                       >
@@ -586,6 +853,7 @@ function NewSale() {
                           )
                         }
                       >
+
                         <option value="">
                           {product &&
                           variants.length ===
@@ -608,10 +876,14 @@ function NewSale() {
                             </option>
                           )
                         )}
+
                       </select>
+
                     </div>
 
+
                     <div className="form-field new-sale-quantity">
+
                       <label
                         htmlFor={`quantity-${line.id}`}
                       >
@@ -637,9 +909,12 @@ function NewSale() {
                           )
                         }
                       />
+
                     </div>
 
+
                     <div className="new-sale-line-price">
+
                       <span>
                         Unit price
                       </span>
@@ -659,9 +934,12 @@ function NewSale() {
                           {variant.size}
                         </small>
                       )}
+
                     </div>
 
+
                     <div className="new-sale-line-total">
+
                       <span>
                         Line total
                       </span>
@@ -673,7 +951,9 @@ function NewSale() {
                             ).toFixed(2)}`
                           : "—"}
                       </strong>
+
                     </div>
+
 
                     <button
                       type="button"
@@ -693,13 +973,17 @@ function NewSale() {
                         strokeWidth={2}
                       />
                     </button>
+
                   </div>
                 )
               }
             )}
+
           </div>
 
+
           <div className="new-sale-add-line">
+
             <button
               type="button"
               className="secondary-button"
@@ -709,13 +993,19 @@ function NewSale() {
                 size={16}
                 strokeWidth={2.2}
               />
+
               Add another item
             </button>
+
           </div>
+
         </article>
 
+
         <article className="content-card">
+
           <div className="content-card-header">
+
             <div>
               <h4>
                 Payment
@@ -730,9 +1020,12 @@ function NewSale() {
             <span className="status-badge">
               Full payment required
             </span>
+
           </div>
 
+
           <div className="payment-summary">
+
             <div>
               <span>
                 Amount to pay
@@ -742,20 +1035,31 @@ function NewSale() {
                 GHS {total.toFixed(2)}
               </strong>
             </div>
+
           </div>
 
+
           <div className="payment-method-grid">
+
             <div className="form-field payment-field">
+
               <label htmlFor="cash-amount">
+
                 <Banknote
                   size={15}
                   strokeWidth={2}
                 />
+
                 Cash
+
               </label>
 
+
               <div className="payment-input">
-                <span>GHS</span>
+
+                <span>
+                  GHS
+                </span>
 
                 <input
                   id="cash-amount"
@@ -770,20 +1074,31 @@ function NewSale() {
                   }
                   placeholder="0.00"
                 />
+
               </div>
+
             </div>
 
+
             <div className="form-field payment-field">
+
               <label htmlFor="momo-amount">
+
                 <Smartphone
                   size={15}
                   strokeWidth={2}
                 />
+
                 MoMo
+
               </label>
 
+
               <div className="payment-input">
-                <span>GHS</span>
+
+                <span>
+                  GHS
+                </span>
 
                 <input
                   id="momo-amount"
@@ -798,9 +1113,13 @@ function NewSale() {
                   }
                   placeholder="0.00"
                 />
+
               </div>
+
             </div>
+
           </div>
+
 
           <div
             className={`payment-check ${
@@ -811,6 +1130,7 @@ function NewSale() {
                   : ""
             }`}
           >
+
             <span>
               {isPaymentComplete
                 ? "Amount received"
@@ -827,10 +1147,14 @@ function NewSale() {
                     paymentDifference
                   ).toFixed(2)}
             </strong>
+
           </div>
+
         </article>
 
+
         <div className="new-sale-summary">
+
           <div>
             <span>
               Sale total
@@ -840,7 +1164,9 @@ function NewSale() {
               GHS {total.toFixed(2)}
             </strong>
           </div>
+
         </div>
+
 
         {formError && (
           <div className="form-error">
@@ -848,7 +1174,9 @@ function NewSale() {
           </div>
         )}
 
+
         <div className="new-sale-actions">
+
           <button
             type="button"
             className="secondary-button"
@@ -860,11 +1188,13 @@ function NewSale() {
             Cancel
           </button>
 
+
           <button
             type="submit"
             className="primary-button"
             disabled={
               saving ||
+              !selectedStudent ||
               !isPaymentComplete
             }
           >
@@ -872,8 +1202,11 @@ function NewSale() {
               ? "Recording sale..."
               : "Confirm Payment & Record Sale"}
           </button>
+
         </div>
+
       </form>
+
     </section>
   )
 }

@@ -6,6 +6,7 @@ import {
   Receipt,
   ShoppingCart,
   Store,
+  GraduationCap,
   X,
 } from "lucide-react"
 
@@ -88,6 +89,22 @@ function Sidebar({
           </NavLink>
 
           <NavLink
+            to="/students"
+            onClick={handleNavigation}
+            className={({ isActive }) =>
+              isActive
+                ? "nav-item active"
+                : "nav-item"
+            }
+          >
+            <GraduationCap
+              size={18}
+              strokeWidth={2}
+            />
+            Students
+          </NavLink>
+
+          <NavLink
             to="/stock"
             onClick={handleNavigation}
             className={({ isActive }) =>
@@ -103,21 +120,21 @@ function Sidebar({
             Stock
           </NavLink>
 
-        <NavLink
+          <NavLink
             to="/stock-receipts"
             onClick={handleNavigation}
             className={({ isActive }) =>
-                isActive
+              isActive
                 ? "nav-item active"
                 : "nav-item"
             }
-            >
+          >
             <Receipt
-                size={18}
-                strokeWidth={2}
+              size={18}
+              strokeWidth={2}
             />
             Stock Receipts
-            </NavLink>
+          </NavLink>
 
           <NavLink
             to="/sellers"
