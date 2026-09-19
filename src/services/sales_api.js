@@ -65,6 +65,17 @@ export function createSaleLine(
   )
 }
 
+export function updateSaleLine(
+  saleId,
+  lineId,
+  data
+) {
+  return apiClient.patch(
+    `/sales/${saleId}/lines/${lineId}/`,
+    data
+  )
+}
+
 export function completeSale(data) {
   return apiClient.post(
     "/sales/complete/",
@@ -79,6 +90,24 @@ export function deliverSale(
   return apiClient.post(
     `/sales/${saleId}/deliver/`,
     data
+  )
+}
+
+export function undeliverSale(
+  saleId,
+  data
+) {
+  return apiClient.post(
+    `/sales/${saleId}/undeliver/`,
+    data
+  )
+}
+
+export function getProductVariants(
+  productId
+) {
+  return apiClient.get(
+    `/products/${productId}/variants/`
   )
 }
 

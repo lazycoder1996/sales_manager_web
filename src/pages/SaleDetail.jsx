@@ -16,9 +16,11 @@ import {
 import {
   deliverSale,
   getSale,
+  undeliverSale,
 } from "../services/sales_api"
 
 import AdditionalPurchaseModal from "../components/AdditionalPurchaseModal"
+import EditVariant from "../components/EditVariant"
 
 function SaleDetail() {
   const navigate = useNavigate()
@@ -31,8 +33,8 @@ function SaleDetail() {
   const [showDelivery, setShowDelivery] =
     useState(false)
 
-    const [showAdditionalPurchase, setShowAdditionalPurchase] =
-  useState(false)
+  const [showAdditionalPurchase, setShowAdditionalPurchase] =
+    useState(false)
 
   const [deliveryQuantities, setDeliveryQuantities] =
     useState({})
@@ -44,6 +46,27 @@ function SaleDetail() {
     useState(false)
 
   const [deliveryError, setDeliveryError] =
+    useState("")
+
+  const [showVariantEdit, setShowVariantEdit] =
+    useState(false)
+
+  const [variantLine, setVariantLine] =
+    useState(null)
+
+  const [showUndelivery, setShowUndelivery] =
+    useState(false)
+
+  const [undeliveryLine, setUndeliveryLine] =
+    useState(null)
+
+  const [undeliveryQuantity, setUndeliveryQuantity] =
+    useState(1)
+
+  const [undelivering, setUndelivering] =
+    useState(false)
+
+  const [undeliveryError, setUndeliveryError] =
     useState("")
 
   useEffect(() => {
@@ -267,6 +290,143 @@ function SaleDetail() {
     }
   }
 
+  function openVariantEdit(line) {
+    if (
+      Number(line.delivered_quantity || 0) >
+      0
+    ) {
+      return
+    }
+
+    setVariantLine(line)
+    setShowVariantEdit(true)
+  }
+
+  function closeVariantEdit() {
+    setShowVariantEdit(false)
+    setVariantLine(null)
+  }
+
+  function handleVariantSuccess(
+    updatedSaleLine
+  ) {
+    setSale((current) => {
+      if (!current) {
+        return current
+      }
+
+      return {
+        ...current,
+        lines: current.lines.map(
+          (line) =>
+            line.id === updatedSaleLine.id
+              ? updatedSaleLine
+              : line
+        ),
+      }
+    })
+
+    setShowVariantEdit(false)
+    setVariantLine(null)
+  }
+
+  function openUndelivery(line) {
+    if (
+      Number(line.delivered_quantity || 0) <
+      1
+    ) {
+      return
+    }
+
+    setUndeliveryLine(line)
+    setUndeliveryQuantity(
+      Number(line.delivered_quantity)
+    )
+    setUndeliveryError("")
+    setShowUndelivery(true)
+  }
+
+  function closeUndelivery() {
+    if (undelivering) {
+      return
+    }
+
+    setShowUndelivery(false)
+    setUndeliveryLine(null)
+    setUndeliveryQuantity(1)
+    setUndeliveryError("")
+  }
+
+  function validateUndelivery() {
+    if (!undeliveryLine) {
+      return "Sale line is unavailable."
+    }
+
+    const quantity = Number(
+      undeliveryQuantity
+    )
+
+    if (
+      !Number.isInteger(quantity) ||
+      quantity < 1
+    ) {
+      return "Quantity must be at least 1."
+    }
+
+    if (
+      quantity >
+      Number(
+        undeliveryLine.delivered_quantity || 0
+      )
+    ) {
+      return `Only ${undeliveryLine.delivered_quantity} unit(s) have been delivered for this item.`
+    }
+
+    return ""
+  }
+
+  async function handleUndelivery() {
+    setUndeliveryError("")
+
+    const validationError =
+      validateUndelivery()
+
+    if (validationError) {
+      setUndeliveryError(validationError)
+      return
+    }
+
+    try {
+      setUndelivering(true)
+
+      const updatedSale =
+        await undeliverSale(
+          sale.id,
+          {
+            lines: [
+              {
+                line_id:
+                  undeliveryLine.id,
+                quantity:
+                  Number(
+                    undeliveryQuantity
+                  ),
+              },
+            ],
+          }
+        )
+
+      setSale(updatedSale)
+      setShowUndelivery(false)
+      setUndeliveryLine(null)
+      setUndeliveryQuantity(1)
+    } catch (error) {
+      setUndeliveryError(error.message)
+    } finally {
+      setUndelivering(false)
+    }
+  }
+
   if (loading) {
     return (
       <section className="page-content">
@@ -360,32 +520,34 @@ function SaleDetail() {
           </p>
         </div>
 
-    <div className="page-heading-actions">
-    {sale.payment_status === "paid" && (
-        <button
-        className="secondary-button"
-        onClick={() =>
-            setShowAdditionalPurchase(true)
-        }
-        >
-        New Purchase
-        </button>
-    )}
+        <div className="page-heading-actions">
+          {sale.payment_status === "paid" && (
+            <button
+              className="secondary-button"
+              onClick={() =>
+                setShowAdditionalPurchase(
+                  true
+                )
+              }
+            >
+              New Purchase
+            </button>
+          )}
 
-    {hasUndeliveredItems() &&
-        sale.payment_status === "paid" && (
-        <button
-            className="primary-button"
-            onClick={openDelivery}
-        >
-            <Package
-            size={16}
-            strokeWidth={2}
-            />
-            Deliver Items
-        </button>
-        )}
-    </div>
+          {hasUndeliveredItems() &&
+            sale.payment_status === "paid" && (
+              <button
+                className="primary-button"
+                onClick={openDelivery}
+              >
+                <Package
+                  size={16}
+                  strokeWidth={2}
+                />
+                Deliver Items
+              </button>
+            )}
+        </div>
       </div>
 
       <div className="sale-detail-overview">
@@ -484,6 +646,11 @@ function SaleDetail() {
               const remaining =
                 getRemainingQuantity(line)
 
+              const hasDelivered =
+                Number(
+                  line.delivered_quantity || 0
+                ) > 0
+
               return (
                 <div
                   className="purchased-item"
@@ -563,6 +730,36 @@ function SaleDetail() {
                       </strong>
                     </div>
                   )}
+
+                  <div className="purchased-item-actions">
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() =>
+                        openVariantEdit(line)
+                      }
+                      disabled={hasDelivered}
+                      title={
+                        hasDelivered
+                          ? "Mark the delivered quantity as undelivered before changing the variant."
+                          : "Edit product variant"
+                      }
+                    >
+                      Edit Variant
+                    </button>
+
+                    {hasDelivered && (
+                      <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={() =>
+                          openUndelivery(line)
+                        }
+                      >
+                        Mark Undelivered
+                      </button>
+                    )}
+                  </div>
                 </div>
               )
             })}
@@ -808,18 +1005,164 @@ function SaleDetail() {
         </div>
       )}
 
-        {showAdditionalPurchase && (
-    <AdditionalPurchaseModal
-        sale={sale}
-        onClose={() =>
-        setShowAdditionalPurchase(false)
-        }
-        onSuccess={async () => {
-        setShowAdditionalPurchase(false)
-        await loadSale()
-        }}
-    />
-    )}
+      {showUndelivery && (
+        <div className="delivery-overlay">
+          <div className="delivery-modal">
+            <div className="delivery-modal-header">
+              <div>
+                <p className="eyebrow">
+                  Delivery
+                </p>
+
+                <h4>
+                  Mark Undelivered
+                </h4>
+
+                <p>
+                  Return delivered items to available
+                  stock.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className="delivery-modal-close"
+                onClick={closeUndelivery}
+                disabled={undelivering}
+                title="Close"
+              >
+                <X
+                  size={18}
+                  strokeWidth={2}
+                />
+              </button>
+            </div>
+
+            <div className="delivery-lines">
+              <div className="delivery-line">
+                <div className="delivery-line-info">
+                  <div className="delivery-line-icon">
+                    <Package
+                      size={17}
+                      strokeWidth={2}
+                    />
+                  </div>
+
+                  <div>
+                    <strong>
+                      {undeliveryLine?.product_name}
+                    </strong>
+
+                    {undeliveryLine?.product_variant_size && (
+                      <span>
+                        Size{" "}
+                        {
+                          undeliveryLine.product_variant_size
+                        }
+                      </span>
+                    )}
+
+                    <small>
+                      {
+                        undeliveryLine?.delivered_quantity
+                      }{" "}
+                      {Number(
+                        undeliveryLine?.delivered_quantity ||
+                        0
+                      ) === 1
+                        ? "unit"
+                        : "units"}{" "}
+                      currently delivered
+                    </small>
+                  </div>
+                </div>
+
+                <div className="delivery-line-actions">
+                  <div className="delivery-quantity">
+                    <label
+                      htmlFor="undelivery-quantity"
+                    >
+                      Quantity
+                    </label>
+
+                    <input
+                      id="undelivery-quantity"
+                      type="number"
+                      min="1"
+                      max={
+                        undeliveryLine?.delivered_quantity ||
+                        1
+                      }
+                      step="1"
+                      value={
+                        undeliveryQuantity
+                      }
+                      onChange={(event) =>
+                        setUndeliveryQuantity(
+                          event.target.value
+                        )
+                      }
+                      disabled={
+                        undelivering
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {undeliveryError && (
+              <div className="form-error">
+                {undeliveryError}
+              </div>
+            )}
+
+            <div className="delivery-modal-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={closeUndelivery}
+                disabled={undelivering}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                className="primary-button"
+                onClick={handleUndelivery}
+                disabled={undelivering}
+              >
+                {undelivering
+                  ? "Updating..."
+                  : "Mark Undelivered"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showVariantEdit && (
+        <EditVariant
+          sale={sale}
+          line={variantLine}
+          onClose={closeVariantEdit}
+          onSuccess={handleVariantSuccess}
+        />
+      )}
+
+      {showAdditionalPurchase && (
+        <AdditionalPurchaseModal
+          sale={sale}
+          onClose={() =>
+            setShowAdditionalPurchase(false)
+          }
+          onSuccess={async () => {
+            setShowAdditionalPurchase(false)
+            await loadSale()
+          }}
+        />
+      )}
     </section>
   )
 }
