@@ -113,13 +113,13 @@ function NewStudent() {
             : null,
 
         residence:
-          formData.residence.trim(),
+          formData.residence.trim() ? formData.residence.trim() : null,
 
         date_of_birth:
-          formData.date_of_birth,
+          formData.date_of_birth ? formData.date_of_birth:null,
 
         house:
-          formData.house,
+          formData.house ? formData.house : null,
       }
 
       const student = await createStudent(data)
@@ -277,7 +277,7 @@ function NewStudent() {
                   type="date"
                   value={formData.date_of_birth}
                   onChange={handleChange}
-                  required
+                  // required
                 />
               </div>
 
@@ -313,7 +313,7 @@ function NewStudent() {
                   name="residence"
                   value={formData.residence}
                   onChange={handleChange}
-                  required
+                  // required
                   placeholder="e.g. Mankessim"
                 />
               </div>
@@ -330,7 +330,7 @@ function NewStudent() {
                   name="house"
                   value={formData.house}
                   onChange={handleChange}
-                  required
+                  // required
                   disabled={housesLoading}
                 >
                   <option value="">

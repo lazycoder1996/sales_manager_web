@@ -17,6 +17,7 @@ function Students() {
   const navigate = useNavigate()
 
   const [students, setStudents] = useState([])
+  const [totalCount, setTotalCount] = useState(0);
   const [pageInfo, setPageInfo] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
 
@@ -51,6 +52,7 @@ function Students() {
       )
 
       setPageInfo(data.page_info)
+      setTotalCount(data.total_count)
     } catch (error) {
       setError(
         error.message ||
@@ -168,8 +170,8 @@ function Students() {
 
         {!loading && !error && (
           <span className="students-count">
-            {students.length}{" "}
-            {students.length === 1
+            {totalCount}{" "}
+            {totalCount === 1
               ? "student"
               : "students"}
           </span>
@@ -229,7 +231,7 @@ function Students() {
 
         {!loading &&
           !error &&
-          students.length === 0 && (
+          totalCount === 0 && (
             <div className="empty-state">
 
               <div className="empty-state-icon">
@@ -275,7 +277,7 @@ function Students() {
 
         {!loading &&
           !error &&
-          students.length > 0 && (
+          totalCount > 0 && (
             <div className="students-grid">
 
               {students.map((student) => (
@@ -357,7 +359,7 @@ function Students() {
 
         {!loading &&
           !error &&
-          students.length > 0 &&
+          totalCount > 0 &&
           pageInfo?.has_next_page && (
             <div className="students-load-more">
 

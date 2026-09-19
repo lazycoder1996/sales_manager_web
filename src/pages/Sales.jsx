@@ -22,6 +22,7 @@ function Sales() {
   const searchTimeoutRef = useRef(null)
 
   const [sales, setSales] = useState([])
+  const [totalCount, setTotalCount] = useState(0);
   const [pageInfo, setPageInfo] = useState(null)
 
   const [searchTerm, setSearchTerm] = useState("")
@@ -110,6 +111,7 @@ function Sales() {
       }
 
       setPageInfo(data.page_info)
+      setTotalCount(data.total_count)
     } catch (error) {
       if (!append) {
         setSales([])
@@ -386,8 +388,8 @@ function Sales() {
 
           {!loading && (
             <span className="sales-count">
-              {sales.length}{" "}
-              {sales.length === 1
+              {totalCount}{" "}
+              {totalCount === 1
                 ? "student"
                 : "students"}
             </span>
@@ -432,7 +434,7 @@ function Sales() {
 
         {!loading &&
           !error &&
-          sales.length === 0 && (
+          totalCount === 0 && (
             <div className="empty-state">
               <div className="empty-state-icon">
                 <Search
@@ -461,7 +463,7 @@ function Sales() {
 
         {!loading &&
           !error &&
-          sales.length > 0 && (
+          totalCount > 0 && (
             <>
               <div className="sales-list">
                 {sales.map((sale) => (
