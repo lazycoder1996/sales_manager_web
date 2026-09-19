@@ -377,7 +377,7 @@ function EditStudent() {
                   type="date"
                   value={formData.date_of_birth}
                   onChange={handleChange}
-                  required
+                  // required
                 />
               </div>
 
@@ -413,7 +413,7 @@ function EditStudent() {
                   name="residence"
                   value={formData.residence}
                   onChange={handleChange}
-                  required
+                  // required
                 />
               </div>
 
@@ -429,7 +429,7 @@ function EditStudent() {
                   name="house"
                   value={formData.house}
                   onChange={handleChange}
-                  required
+                  // required
                   disabled={housesLoading}
                 >
                   <option value="">
