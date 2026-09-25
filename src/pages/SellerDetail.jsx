@@ -13,32 +13,33 @@ import {
   updateSeller,
 } from "../services/sellers_api"
 
-import{
-    createSellerPayment,
-    getSellerPayments,
+import {
+  createSellerPayment,
+  getSellerPayments,
 } from "../services/seller_payments_api"
 
 function SellerDetail() {
-const [payments, setPayments] = useState([])
-const [paymentsLoading, setPaymentsLoading] =
-  useState(true)
-const [paymentsError, setPaymentsError] =
-  useState("")
+  const [payments, setPayments] = useState([])
+  const [paymentsLoading, setPaymentsLoading] =
+    useState(true)
+  const [paymentsError, setPaymentsError] =
+    useState("")
 
-const [showPaymentForm, setShowPaymentForm] =
-  useState(false)
+  const [showPaymentForm, setShowPaymentForm] =
+    useState(false)
 
-const [paymentSaving, setPaymentSaving] =
-  useState(false)
+  const [paymentSaving, setPaymentSaving] =
+    useState(false)
 
-const [paymentError, setPaymentError] =
-  useState("")
+  const [paymentError, setPaymentError] =
+    useState("")
 
-const [paymentData, setPaymentData] = useState({
-  amount: "",
-  paid_at: new Date().toISOString().slice(0, 16),
-  notes: "",
-})
+  const [paymentData, setPaymentData] = useState({
+    amount: "",
+    paid_at: new Date().toISOString().slice(0, 16),
+    notes: "",
+  })
+
   const { sellerId } = useParams()
   const navigate = useNavigate()
 
@@ -64,22 +65,20 @@ const [paymentData, setPaymentData] = useState({
     loadPayments()
   }, [sellerId])
 
-    async function loadPayments() {
+  async function loadPayments() {
     try {
-        setPaymentsLoading(true)
-        setPaymentsError("")
+      setPaymentsLoading(true)
+      setPaymentsError("")
 
-        const data = await getSellerPayments(
-        sellerId
-        )
+      const data = await getSellerPayments(sellerId)
 
-        setPayments(data)
+      setPayments(data)
     } catch (error) {
-        setPaymentsError(error.message)
+      setPaymentsError(error.message)
     } finally {
-        setPaymentsLoading(false)
+      setPaymentsLoading(false)
     }
-    }
+  }
 
   async function loadSeller() {
     try {
@@ -127,85 +126,87 @@ const [paymentData, setPaymentData] = useState({
   }
 
   function openPaymentForm() {
-  setPaymentError("")
+    setPaymentError("")
 
-  setPaymentData({
-    amount: "",
-    paid_at: new Date()
-      .toISOString()
-      .slice(0, 16),
-    notes: "",
-  })
-
-  setShowPaymentForm(true)
-}
-
-function closePaymentForm() {
-  if (paymentSaving) {
-    return
-  }
-
-  setShowPaymentForm(false)
-  setPaymentError("")
-}
-
-function handlePaymentInputChange(event) {
-  const { name, value } = event.target
-
-  setPaymentData((current) => ({
-    ...current,
-    [name]: value,
-  }))
-}
-
-async function handlePaymentSubmit(event) {
-  event.preventDefault()
-
-  setPaymentError("")
-
-  const amount = Number(paymentData.amount)
-  const outstanding = Number(
-    seller.outstanding || 0
-  )
-
-  if (!amount || amount <= 0) {
-    setPaymentError(
-      "Payment amount must be greater than zero."
-    )
-    return
-  }
-
-  if (amount > outstanding) {
-    setPaymentError(
-      `Payment cannot exceed the outstanding balance of GHS ${outstanding.toFixed(2)}.`
-    )
-    return
-  }
-
-  try {
-    setPaymentSaving(true)
-
-    await createSellerPayment({
-      seller: seller.id,
-      amount: amount.toFixed(2),
-      paid_at: new Date(
-        paymentData.paid_at
-      ).toISOString(),
-      notes: paymentData.notes.trim(),
+    setPaymentData({
+      amount: "",
+      paid_at: new Date()
+        .toISOString()
+        .slice(0, 16),
+      notes: "",
     })
 
-    const updatedSeller =
-      await getSeller(sellerId)
-
-    setSeller(updatedSeller)
-    await loadPayments()
-    setShowPaymentForm(false)
-  } catch (error) {
-    setPaymentError(error.message)
-  } finally {
-    setPaymentSaving(false)
+    setShowPaymentForm(true)
   }
-}
+
+  function closePaymentForm() {
+    if (paymentSaving) {
+      return
+    }
+
+    setShowPaymentForm(false)
+    setPaymentError("")
+  }
+
+  function handlePaymentInputChange(event) {
+    const { name, value } = event.target
+
+    setPaymentData((current) => ({
+      ...current,
+      [name]: value,
+    }))
+  }
+
+  async function handlePaymentSubmit(event) {
+    event.preventDefault()
+
+    setPaymentError("")
+
+    const amount = Number(paymentData.amount)
+    const outstanding = Number(
+      seller.outstanding || 0
+    )
+
+    if (!amount || amount <= 0) {
+      setPaymentError(
+        "Payment amount must be greater than zero."
+      )
+      return
+    }
+
+    if (amount > outstanding) {
+      setPaymentError(
+        `Payment cannot exceed the outstanding balance of GHS ${outstanding.toFixed(2)}.`
+      )
+      return
+    }
+
+    try {
+      setPaymentSaving(true)
+
+      await createSellerPayment({
+        seller: seller.id,
+        amount: amount.toFixed(2),
+        paid_at: new Date(
+          paymentData.paid_at
+        ).toISOString(),
+        notes: paymentData.notes.trim(),
+      })
+
+      const updatedSeller =
+        await getSeller(sellerId)
+
+      setSeller(updatedSeller)
+
+      await loadPayments()
+
+      setShowPaymentForm(false)
+    } catch (error) {
+      setPaymentError(error.message)
+    } finally {
+      setPaymentSaving(false)
+    }
+  }
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -300,6 +301,22 @@ async function handlePaymentSubmit(event) {
     return null
   }
 
+  const totalOwed = Number(
+    seller.total_owed || 0
+  )
+
+  const totalPaid = Number(
+    seller.total_paid || 0
+  )
+
+  const outstanding = Number(
+    seller.outstanding || 0
+  )
+
+  const stockSupplied = Number(
+    seller.stock_supplied || 0
+  )
+
   return (
     <section className="page-content">
       <div className="page-heading">
@@ -342,44 +359,44 @@ async function handlePaymentSubmit(event) {
         </div>
 
         <div className="page-heading-actions">
-        {seller.is_active &&
-            Number(seller.outstanding || 0) > 0 && (
-            <button
+          {seller.is_active &&
+            outstanding > 0 && (
+              <button
                 className="primary-button"
                 onClick={openPaymentForm}
-            >
+              >
                 <Wallet
-                size={16}
-                strokeWidth={2}
+                  size={16}
+                  strokeWidth={2}
                 />
 
                 Make Payment
-            </button>
+              </button>
             )}
 
-        <button
-            className="secondary-button "
+          <button
+            className="secondary-button"
             onClick={openEditForm}
-        >
+          >
             <Pencil
-            size={16}
-            strokeWidth={2}
+              size={16}
+              strokeWidth={2}
             />
 
             Edit Seller
-        </button>
+          </button>
 
-        <span
+          <span
             className={
-            seller.is_active
+              seller.is_active
                 ? "status-pill active"
                 : "status-pill inactive"
             }
-        >
+          >
             {seller.is_active
-            ? "Active"
-            : "Inactive"}
-        </span>
+              ? "Active"
+              : "Inactive"}
+          </span>
         </div>
       </div>
 
@@ -397,22 +414,10 @@ async function handlePaymentSubmit(event) {
         </article>
 
         <article className="detail-summary-card">
-          <span>Phone</span>
-
-          <strong>
-            {seller.phone || "—"}
-          </strong>
-
-          <p>
-            Contact number
-          </p>
-        </article>
-
-        <article className="detail-summary-card">
           <span>Stock supplied</span>
 
           <strong>
-            {seller.stock_supplied || 0}
+            {stockSupplied}
           </strong>
 
           <p>
@@ -421,14 +426,38 @@ async function handlePaymentSubmit(event) {
         </article>
 
         <article className="detail-summary-card">
-          <span>Balance</span>
+          <span>Total owed</span>
 
-            <strong>
+          <strong>
             GHS{" "}
-            {Number(
-                seller.outstanding || 0
-            ).toFixed(2)}
-            </strong>
+            {totalOwed.toFixed(2)}
+          </strong>
+
+          <p>
+            Value of sold items
+          </p>
+        </article>
+
+        <article className="detail-summary-card">
+          <span>Total paid</span>
+
+          <strong>
+            GHS{" "}
+            {totalPaid.toFixed(2)}
+          </strong>
+
+          <p>
+            Payments made
+          </p>
+        </article>
+
+        <article className="detail-summary-card">
+          <span>Outstanding</span>
+
+          <strong>
+            GHS{" "}
+            {outstanding.toFixed(2)}
+          </strong>
 
           <p>
             Current amount owed
@@ -440,7 +469,9 @@ async function handlePaymentSubmit(event) {
         <article className="content-card">
           <div className="content-card-header">
             <div>
-              <h4>Seller information</h4>
+              <h4>
+                Seller information
+              </h4>
 
               <p>
                 Current contact information.
@@ -461,7 +492,8 @@ async function handlePaymentSubmit(event) {
               <span>Phone number</span>
 
               <strong>
-                {seller.phone || "Not provided"}
+                {seller.phone ||
+                  "Not provided"}
               </strong>
             </div>
 
@@ -480,113 +512,164 @@ async function handlePaymentSubmit(event) {
         <article className="content-card">
           <div className="content-card-header">
             <div>
-              <h4>Notes</h4>
+              <h4>
+                Seller balance
+              </h4>
 
               <p>
-                Additional information about this
-                seller.
+                Financial position based on
+                sold items and payments.
               </p>
             </div>
           </div>
 
-          <div className="seller-notes">
-            {seller.notes ? (
-              <p>{seller.notes}</p>
-            ) : (
-              <div className="seller-notes-empty">
-                <p>
-                  No notes have been added for this
-                  seller.
-                </p>
-              </div>
-            )}
+          <div className="seller-information">
+            <div className="information-row">
+              <span>Total owed</span>
+
+              <strong>
+                GHS{" "}
+                {totalOwed.toFixed(2)}
+              </strong>
+            </div>
+
+            <div className="information-row">
+              <span>Total paid</span>
+
+              <strong>
+                GHS{" "}
+                {totalPaid.toFixed(2)}
+              </strong>
+            </div>
+
+            <div className="information-row">
+              <span>Outstanding</span>
+
+              <strong>
+                GHS{" "}
+                {outstanding.toFixed(2)}
+              </strong>
+            </div>
           </div>
         </article>
       </div>
 
-      <article className="content-card seller-payments-card">
-  <div className="content-card-header">
-    <div>
-      <h4>Payment History</h4>
-
-      <p>
-        Payments made to this seller.
-      </p>
-    </div>
-
-    <span className="status-badge">
-      {payments.length}{" "}
-      {payments.length === 1
-        ? "payment"
-        : "payments"}
-    </span>
-  </div>
-
-  {paymentsLoading ? (
-    <div className="seller-payment-empty">
-      <p>
-        Loading payment history...
-      </p>
-    </div>
-  ) : paymentsError ? (
-    <div className="seller-payment-empty">
-      <p>{paymentsError}</p>
-
-      <button
-        className="secondary-button"
-        onClick={loadPayments}
-      >
-        Try again
-      </button>
-    </div>
-  ) : payments.length === 0 ? (
-    <div className="seller-payment-empty">
-      <div className="empty-state-icon">
-        <Wallet
-          size={20}
-          strokeWidth={2}
-        />
-      </div>
-
-      <h5>
-        No payments yet
-      </h5>
-
-      <p>
-        Payments made to this seller will
-        appear here.
-      </p>
-    </div>
-  ) : (
-    <div className="seller-payment-list">
-      {payments.map((payment) => (
-        <div
-          className="seller-payment-row"
-          key={payment.id}
-        >
+      <article className="content-card">
+        <div className="content-card-header">
           <div>
-            <strong>
-              GHS{" "}
-              {Number(
-                payment.amount || 0
-              ).toFixed(2)}
-            </strong>
+            <h4>
+              Notes
+            </h4>
 
-            <span>
-              {new Date(
-                payment.paid_at
-              ).toLocaleString()}
-            </span>
+            <p>
+              Additional information about this
+              seller.
+            </p>
+          </div>
+        </div>
+
+        <div className="seller-notes">
+          {seller.notes ? (
+            <p>{seller.notes}</p>
+          ) : (
+            <div className="seller-notes-empty">
+              <p>
+                No notes have been added for this
+                seller.
+              </p>
+            </div>
+          )}
+        </div>
+      </article>
+
+      <article className="content-card seller-payments-card">
+        <div className="content-card-header">
+          <div>
+            <h4>
+              Payment History
+            </h4>
+
+            <p>
+              Payments made to this seller.
+            </p>
           </div>
 
-          <span>
-            {payment.notes || "No notes"}
+          <span className="status-badge">
+            {payments.length}{" "}
+            {payments.length === 1
+              ? "payment"
+              : "payments"}
           </span>
         </div>
-      ))}
-    </div>
-  )}
-</article>
+
+        {paymentsLoading ? (
+          <div className="seller-payment-empty">
+            <p>
+              Loading payment history...
+            </p>
+          </div>
+        ) : paymentsError ? (
+          <div className="seller-payment-empty">
+            <p>
+              {paymentsError}
+            </p>
+
+            <button
+              className="secondary-button"
+              onClick={loadPayments}
+            >
+              Try again
+            </button>
+          </div>
+        ) : payments.length === 0 ? (
+          <div className="seller-payment-empty">
+            <div className="empty-state-icon">
+              <Wallet
+                size={20}
+                strokeWidth={2}
+              />
+            </div>
+
+            <h5>
+              No payments yet
+            </h5>
+
+            <p>
+              Payments made to this seller
+              will appear here.
+            </p>
+          </div>
+        ) : (
+          <div className="seller-payment-list">
+            {payments.map((payment) => (
+              <div
+                className="seller-payment-row"
+                key={payment.id}
+              >
+                <div>
+                  <strong>
+                    GHS{" "}
+                    {Number(
+                      payment.amount || 0
+                    ).toFixed(2)}
+                  </strong>
+
+                  <span>
+                    {new Date(
+                      payment.paid_at
+                    ).toLocaleString()}
+                  </span>
+                </div>
+
+                <span>
+                  {payment.notes ||
+                    "No notes"}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </article>
 
       {showEditForm && (
         <div
@@ -605,7 +688,9 @@ async function handlePaymentSubmit(event) {
                   Seller settings
                 </p>
 
-                <h4>Edit Seller</h4>
+                <h4>
+                  Edit Seller
+                </h4>
 
                 <p>
                   Update the seller information.
@@ -639,7 +724,9 @@ async function handlePaymentSubmit(event) {
                   name="name"
                   type="text"
                   value={formData.name}
-                  onChange={handleInputChange}
+                  onChange={
+                    handleInputChange
+                  }
                   autoFocus
                 />
               </div>
@@ -654,7 +741,9 @@ async function handlePaymentSubmit(event) {
                   name="phone"
                   type="tel"
                   value={formData.phone}
-                  onChange={handleInputChange}
+                  onChange={
+                    handleInputChange
+                  }
                 />
 
                 <small>
@@ -671,7 +760,9 @@ async function handlePaymentSubmit(event) {
                   id="edit-seller-notes"
                   name="notes"
                   value={formData.notes}
-                  onChange={handleInputChange}
+                  onChange={
+                    handleInputChange
+                  }
                   rows="4"
                 />
               </div>
@@ -706,144 +797,160 @@ async function handlePaymentSubmit(event) {
           </div>
         </div>
       )}
+
       {showPaymentForm && (
-  <div
-    className="modal-backdrop"
-    onMouseDown={closePaymentForm}
-  >
-    <div
-      className="product-modal seller-modal"
-      onMouseDown={(event) =>
-        event.stopPropagation()
-      }
-    >
-      <div className="modal-header">
-        <div>
-          <p className="eyebrow">
-            Seller payment
-          </p>
-
-          <h4>Make Payment</h4>
-
-          <p>
-            Record a payment to {seller.name}.
-          </p>
-        </div>
-
-        <button
-          className="modal-close"
-          onClick={closePaymentForm}
-          disabled={paymentSaving}
-          title="Close"
+        <div
+          className="modal-backdrop"
+          onMouseDown={closePaymentForm}
         >
-          <X
-            size={19}
-            strokeWidth={2}
-          />
-        </button>
-      </div>
+          <div
+            className="product-modal seller-modal"
+            onMouseDown={(event) =>
+              event.stopPropagation()
+            }
+          >
+            <div className="modal-header">
+              <div>
+                <p className="eyebrow">
+                  Seller payment
+                </p>
 
-      <form
-        className="product-form"
-        onSubmit={handlePaymentSubmit}
-      >
-        <div className="form-field">
-          <label>
-            Outstanding balance
-          </label>
+                <h4>
+                  Make Payment
+                </h4>
 
-          <div className="payment-balance">
-            GHS{" "}
-            {Number(
-              seller.outstanding || 0
-            ).toFixed(2)}
+                <p>
+                  Record a payment to{" "}
+                  {seller.name}.
+                </p>
+              </div>
+
+              <button
+                className="modal-close"
+                onClick={closePaymentForm}
+                disabled={paymentSaving}
+                title="Close"
+              >
+                <X
+                  size={19}
+                  strokeWidth={2}
+                />
+              </button>
+            </div>
+
+            <form
+              className="product-form"
+              onSubmit={
+                handlePaymentSubmit
+              }
+            >
+              <div className="form-field">
+                <label>
+                  Outstanding balance
+                </label>
+
+                <div className="payment-balance">
+                  GHS{" "}
+                  {outstanding.toFixed(2)}
+                </div>
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="seller-payment-amount">
+                  Amount
+                </label>
+
+                <input
+                  id="seller-payment-amount"
+                  name="amount"
+                  type="number"
+                  min="0.01"
+                  max={outstanding}
+                  step="0.01"
+                  value={
+                    paymentData.amount
+                  }
+                  onChange={
+                    handlePaymentInputChange
+                  }
+                  placeholder="0.00"
+                  autoFocus
+                />
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="seller-payment-paid-at">
+                  Paid at
+                </label>
+
+                <input
+                  id="seller-payment-paid-at"
+                  name="paid_at"
+                  type="datetime-local"
+                  value={
+                    paymentData.paid_at
+                  }
+                  onChange={
+                    handlePaymentInputChange
+                  }
+                />
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="seller-payment-notes">
+                  Notes
+                </label>
+
+                <textarea
+                  id="seller-payment-notes"
+                  name="notes"
+                  value={
+                    paymentData.notes
+                  }
+                  onChange={
+                    handlePaymentInputChange
+                  }
+                  rows="3"
+                  placeholder="Optional payment note"
+                />
+              </div>
+
+              {paymentError && (
+                <div className="form-error">
+                  {paymentError}
+                </div>
+              )}
+
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={
+                    closePaymentForm
+                  }
+                  disabled={
+                    paymentSaving
+                  }
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  className="primary-button"
+                  disabled={
+                    paymentSaving
+                  }
+                >
+                  {paymentSaving
+                    ? "Recording..."
+                    : "Record Payment"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
-
-        <div className="form-field">
-          <label htmlFor="seller-payment-amount">
-            Amount
-          </label>
-
-          <input
-            id="seller-payment-amount"
-            name="amount"
-            type="number"
-            min="0.01"
-            max={seller.outstanding}
-            step="0.01"
-            value={paymentData.amount}
-            onChange={
-              handlePaymentInputChange
-            }
-            placeholder="0.00"
-            autoFocus
-          />
-        </div>
-
-        <div className="form-field">
-          <label htmlFor="seller-payment-paid-at">
-            Paid at
-          </label>
-
-          <input
-            id="seller-payment-paid-at"
-            name="paid_at"
-            type="datetime-local"
-            value={paymentData.paid_at}
-            onChange={
-              handlePaymentInputChange
-            }
-          />
-        </div>
-
-        <div className="form-field">
-          <label htmlFor="seller-payment-notes">
-            Notes
-          </label>
-
-          <textarea
-            id="seller-payment-notes"
-            name="notes"
-            value={paymentData.notes}
-            onChange={
-              handlePaymentInputChange
-            }
-            rows="3"
-            placeholder="Optional payment note"
-          />
-        </div>
-
-        {paymentError && (
-          <div className="form-error">
-            {paymentError}
-          </div>
-        )}
-
-        <div className="modal-actions">
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={closePaymentForm}
-            disabled={paymentSaving}
-          >
-            Cancel
-          </button>
-
-          <button
-            type="submit"
-            className="primary-button"
-            disabled={paymentSaving}
-          >
-            {paymentSaving
-              ? "Recording..."
-              : "Record Payment"}
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-)}
+      )}
     </section>
   )
 }

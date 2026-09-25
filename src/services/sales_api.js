@@ -76,6 +76,28 @@ export function updateSaleLine(
   )
 }
 
+export function changeSaleLineProduct(
+  saleId,
+  lineId,
+  data
+) {
+  return apiClient.post(
+    `/sales/${saleId}/lines/${lineId}/change-product/`,
+    data
+  )
+}
+
+export function returnSaleLine(
+  saleId,
+  lineId,
+  data = { confirm: true }
+) {
+  return apiClient.post(
+    `/sales/${saleId}/lines/${lineId}/return/`,
+    data
+  )
+}
+
 export function completeSale(data) {
   return apiClient.post(
     "/sales/complete/",

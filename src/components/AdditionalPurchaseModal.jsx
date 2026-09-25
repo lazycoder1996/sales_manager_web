@@ -116,7 +116,8 @@ function AdditionalPurchaseModal({
     momoAmount || 0
   )
 
-  const paymentTotal = cash + momo
+  const paymentTotal =
+    cash + momo
 
   const paymentDifference =
     total - paymentTotal
@@ -183,6 +184,39 @@ function AdditionalPurchaseModal({
     )
   }
 
+  function getLineIdentity(line) {
+    return `${line.productId || ""}:${line.variantId || "none"}`
+  }
+
+  function validateDuplicateLines() {
+    const identities = new Set()
+
+    for (const line of lines) {
+      if (!line.productId) {
+        continue
+      }
+
+      const identity =
+        getLineIdentity(line)
+
+      if (identities.has(identity)) {
+        const product = getProduct(
+          line.productId
+        )
+
+        return (
+          `You have selected ${product?.name || "the same product"} ` +
+          "with the same variant more than once. " +
+          "Increase the quantity on one line instead."
+        )
+      }
+
+      identities.add(identity)
+    }
+
+    return ""
+  }
+
   function validate() {
     if (!sale) {
       return "Sale details are unavailable."
@@ -202,7 +236,9 @@ function AdditionalPurchaseModal({
       )
 
       if (!product) {
-        return "One of the selected products could not be found."
+        return (
+          "One of the selected products could not be found."
+        )
       }
 
       const variants =
@@ -234,12 +270,23 @@ function AdditionalPurchaseModal({
       }
     }
 
+    const duplicateError =
+      validateDuplicateLines()
+
+    if (duplicateError) {
+      return duplicateError
+    }
+
     if (total <= 0) {
-      return "The purchase total must be greater than zero."
+      return (
+        "The purchase total must be greater than zero."
+      )
     }
 
     if (!isPaymentComplete) {
-      return `Payment must equal the purchase total of GHS ${total.toFixed(2)}.`
+      return (
+        `Payment must equal the purchase total of GHS ${total.toFixed(2)}.`
+      )
     }
 
     return ""
@@ -259,23 +306,30 @@ function AdditionalPurchaseModal({
     try {
       setSubmitting(true)
 
-      const data = await createAdditionalPurchase(
-        sale.id,
-        {
-          lines: lines.map((line) => ({
-            product: line.productId,
-            product_variant:
-              line.variantId || null,
-            quantity: Number(
-              line.quantity
+      const data =
+        await createAdditionalPurchase(
+          sale.id,
+          {
+            lines: lines.map(
+              (line) => ({
+                product:
+                  line.productId,
+                product_variant:
+                  line.variantId || null,
+                quantity:
+                  Number(
+                    line.quantity
+                  ),
+              })
             ),
-          })),
-          cash_amount: cash.toFixed(2),
-          momo_amount: momo.toFixed(2),
-          paid_at:
-            new Date().toISOString(),
-        }
-      )
+            cash_amount:
+              cash.toFixed(2),
+            momo_amount:
+              momo.toFixed(2),
+            paid_at:
+              new Date().toISOString(),
+          }
+        )
 
       onSuccess(data)
     } catch (error) {
@@ -432,7 +486,9 @@ function AdditionalPurchaseModal({
                             </option>
 
                             {products.map(
-                              (product) => (
+                              (
+                                product
+                              ) => (
                                 <option
                                   key={
                                     product.id

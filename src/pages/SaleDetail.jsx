@@ -20,7 +20,9 @@ import {
 } from "../services/sales_api"
 
 import AdditionalPurchaseModal from "../components/AdditionalPurchaseModal"
+import ChangeProductModal from "../components/ChangeProductModal"
 import EditVariant from "../components/EditVariant"
+import ReturnSaleLineModal from "../components/ReturnSaleLineModal"
 
 function SaleDetail() {
   const navigate = useNavigate()
@@ -52,6 +54,18 @@ function SaleDetail() {
     useState(false)
 
   const [variantLine, setVariantLine] =
+    useState(null)
+
+  const [showChangeProduct, setShowChangeProduct] =
+    useState(false)
+
+  const [changeProductLine, setChangeProductLine] =
+    useState(null)
+
+  const [showReturn, setShowReturn] =
+    useState(false)
+
+  const [returnLine, setReturnLine] =
     useState(null)
 
   const [showUndelivery, setShowUndelivery] =
@@ -291,13 +305,6 @@ function SaleDetail() {
   }
 
   function openVariantEdit(line) {
-    if (
-      Number(line.delivered_quantity || 0) >
-      0
-    ) {
-      return
-    }
-
     setVariantLine(line)
     setShowVariantEdit(true)
   }
@@ -307,27 +314,45 @@ function SaleDetail() {
     setVariantLine(null)
   }
 
-  function handleVariantSuccess(
-    updatedSaleLine
-  ) {
-    setSale((current) => {
-      if (!current) {
-        return current
-      }
-
-      return {
-        ...current,
-        lines: current.lines.map(
-          (line) =>
-            line.id === updatedSaleLine.id
-              ? updatedSaleLine
-              : line
-        ),
-      }
-    })
-
+  async function handleVariantSuccess() {
     setShowVariantEdit(false)
     setVariantLine(null)
+
+    await loadSale()
+  }
+
+  function openChangeProduct(line) {
+    setChangeProductLine(line)
+    setShowChangeProduct(true)
+  }
+
+  function closeChangeProduct() {
+    setShowChangeProduct(false)
+    setChangeProductLine(null)
+  }
+
+  async function handleChangeProductSuccess() {
+    setShowChangeProduct(false)
+    setChangeProductLine(null)
+
+    await loadSale()
+  }
+
+  function openReturn(line) {
+    setReturnLine(line)
+    setShowReturn(true)
+  }
+
+  function closeReturn() {
+    setShowReturn(false)
+    setReturnLine(null)
+  }
+
+  async function handleReturnSuccess() {
+    setShowReturn(false)
+    setReturnLine(null)
+
+    await loadSale()
   }
 
   function openUndelivery(line) {
@@ -646,10 +671,16 @@ function SaleDetail() {
               const remaining =
                 getRemainingQuantity(line)
 
-              const hasDelivered =
+              const deliveredQuantity =
                 Number(
                   line.delivered_quantity || 0
-                ) > 0
+                )
+
+              const hasDelivered =
+                deliveredQuantity > 0
+
+              const fullyDelivered =
+                remaining === 0
 
               return (
                 <div
@@ -714,7 +745,7 @@ function SaleDetail() {
                     </span>
 
                     <strong>
-                      {line.delivered_quantity} /{" "}
+                      {deliveredQuantity} /{" "}
                       {line.quantity}
                     </strong>
                   </div>
@@ -722,11 +753,23 @@ function SaleDetail() {
                   {remaining > 0 && (
                     <div className="purchased-item-remaining">
                       <span>
-                        Remaining
+                        Pending delivery
                       </span>
 
                       <strong>
                         {remaining}
+                      </strong>
+                    </div>
+                  )}
+
+                  {fullyDelivered && (
+                    <div className="purchased-item-remaining">
+                      <span>
+                        Delivery status
+                      </span>
+
+                      <strong>
+                        Complete
                       </strong>
                     </div>
                   )}
@@ -738,14 +781,19 @@ function SaleDetail() {
                       onClick={() =>
                         openVariantEdit(line)
                       }
-                      disabled={hasDelivered}
-                      title={
-                        hasDelivered
-                          ? "Mark the delivered quantity as undelivered before changing the variant."
-                          : "Edit product variant"
-                      }
+                      title="Edit product variant"
                     >
                       Edit Variant
+                    </button>
+
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() =>
+                        openChangeProduct(line)
+                      }
+                    >
+                      Change Product
                     </button>
 
                     {hasDelivered && (
@@ -759,6 +807,16 @@ function SaleDetail() {
                         Mark Undelivered
                       </button>
                     )}
+
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() =>
+                        openReturn(line)
+                      }
+                    >
+                      Return Item
+                    </button>
                   </div>
                 </div>
               )
@@ -911,7 +969,7 @@ function SaleDetail() {
                               {remaining === 1
                                 ? "unit"
                                 : "units"}{" "}
-                              remaining
+                              pending delivery
                             </small>
                           </div>
                         </div>
@@ -1019,8 +1077,8 @@ function SaleDetail() {
                 </h4>
 
                 <p>
-                  Return delivered items to available
-                  stock.
+                  Reduce the delivered quantity for
+                  this item.
                 </p>
               </div>
 
@@ -1148,6 +1206,26 @@ function SaleDetail() {
           line={variantLine}
           onClose={closeVariantEdit}
           onSuccess={handleVariantSuccess}
+        />
+      )}
+
+      {showChangeProduct && (
+        <ChangeProductModal
+          sale={sale}
+          line={changeProductLine}
+          onClose={closeChangeProduct}
+          onSuccess={
+            handleChangeProductSuccess
+          }
+        />
+      )}
+
+      {showReturn && (
+        <ReturnSaleLineModal
+          sale={sale}
+          line={returnLine}
+          onClose={closeReturn}
+          onSuccess={handleReturnSuccess}
         />
       )}
 
